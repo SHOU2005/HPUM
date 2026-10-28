@@ -1,0 +1,51 @@
+{
+  "steps": [
+    {
+      "step": "Raw listings (6 metros)",
+      "rows": 32963
+    },
+    {
+      "step": "Drop rows with amenities not recorded (code 9)",
+      "rows": 10093,
+      "removed": 22870,
+      "why": "In these rows log-price vs log-area correlation is 0.21 vs 0.77 in recorded rows: prices are misaligned with listings"
+    },
+    {
+      "step": "Drop cities with < 500 clean rows (Kolkata)",
+      "rows": 10018,
+      "removed": 75,
+      "why": "Too few reliable listings to learn local prices"
+    },
+    {
+      "step": "Drop exact duplicate listings",
+      "rows": 8171,
+      "removed": 1847,
+      "why": "Same listing scraped more than once"
+    },
+    {
+      "step": "Drop price/sq ft outside ₹1,500–₹75,000",
+      "rows": 8167,
+      "removed": 4,
+      "why": "Implausible rates: typos in price or area"
+    },
+    {
+      "step": "Drop area/BHK outside 250–2500 sq ft or BHK > 6",
+      "rows": 8076,
+      "removed": 91,
+      "why": "Implausible layouts"
+    }
+  ],
+  "price_area_correlation": {
+    "amenities_recorded": 0.7749621342459166,
+    "amenities_not_recorded": 0.2097422536532967
+  },
+  "final_rows": 8076,
+  "cities": {
+    "Hyderabad": 1912,
+    "Chennai": 1767,
+    "Delhi": 1629,
+    "Bangalore": 1617,
+    "Mumbai": 1151
+  },
+  "localities": 819
+}

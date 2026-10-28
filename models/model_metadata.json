@@ -1,0 +1,492 @@
+{
+  "model_name": "Stacked Ensemble",
+  "ensemble_members": [
+    "Gradient Boosting (tuned)",
+    "Extra Trees (tuned)"
+  ],
+  "tuned_params": {
+    "Gradient Boosting": {
+      "l2_regularization": 0.014465894873674109,
+      "learning_rate": 0.026671486049160753,
+      "max_iter": 430,
+      "max_leaf_nodes": 36,
+      "min_samples_leaf": 6
+    },
+    "Extra Trees": {
+      "max_features": 0.799465584480253,
+      "min_samples_leaf": 2,
+      "n_estimators": 685
+    }
+  },
+  "cv_metrics": {
+    "mape": 0.12080370365335001,
+    "median_ape": 0.0691988816233428,
+    "within_10": 0.6134674922600619,
+    "within_20": 0.8292569659442725,
+    "rmse_log": 0.19982850455634682,
+    "r2_log": 0.9220450386245883,
+    "r2_inr": 0.8004347787106937,
+    "mae_lakh": 15.535478973037016
+  },
+  "interval": {
+    "coverage": 0.8,
+    "low_factor": 0.8327761950026956,
+    "high_factor": 1.1957122618636222
+  },
+  "comparison": [
+    {
+      "Model": "Stacked Ensemble",
+      "mape": 0.1208,
+      "median_ape": 0.0692,
+      "within_10": 0.6135,
+      "within_20": 0.8293,
+      "rmse_log": 0.1998,
+      "r2_log": 0.922,
+      "r2_inr": 0.8004,
+      "mae_lakh": 15.5355,
+      "Time (s)": 44.3
+    },
+    {
+      "Model": "Random Forest",
+      "mape": 0.1248,
+      "median_ape": 0.0743,
+      "within_10": 0.5915,
+      "within_20": 0.8149,
+      "rmse_log": 0.2029,
+      "r2_log": 0.9196,
+      "r2_inr": 0.8026,
+      "mae_lakh": 15.9898,
+      "Time (s)": 3.3
+    },
+    {
+      "Model": "Extra Trees",
+      "mape": 0.1209,
+      "median_ape": 0.0692,
+      "within_10": 0.6098,
+      "within_20": 0.8238,
+      "rmse_log": 0.2037,
+      "r2_log": 0.919,
+      "r2_inr": 0.7697,
+      "mae_lakh": 15.8836,
+      "Time (s)": 2.8
+    },
+    {
+      "Model": "Gradient Boosting",
+      "mape": 0.1324,
+      "median_ape": 0.0823,
+      "within_10": 0.5692,
+      "within_20": 0.8056,
+      "rmse_log": 0.207,
+      "r2_log": 0.9163,
+      "r2_inr": 0.8314,
+      "mae_lakh": 16.4155,
+      "Time (s)": 2.0
+    },
+    {
+      "Model": "Linear Regression",
+      "mape": 0.1579,
+      "median_ape": 0.1069,
+      "within_10": 0.4741,
+      "within_20": 0.7331,
+      "rmse_log": 0.241,
+      "r2_log": 0.8866,
+      "r2_inr": 0.7807,
+      "mae_lakh": 20.0095,
+      "Time (s)": 0.8
+    },
+    {
+      "Model": "Decision Tree",
+      "mape": 0.1559,
+      "median_ape": 0.0943,
+      "within_10": 0.5223,
+      "within_20": 0.7605,
+      "rmse_log": 0.2442,
+      "r2_log": 0.8835,
+      "r2_inr": 0.7553,
+      "mae_lakh": 19.8146,
+      "Time (s)": 0.2
+    },
+    {
+      "Model": "Baseline: locality avg ₹/sq ft",
+      "mape": 0.1595,
+      "median_ape": 0.1008,
+      "within_10": 0.4967,
+      "within_20": 0.7418,
+      "rmse_log": 0.2599,
+      "r2_log": 0.8682,
+      "r2_inr": 0.7092,
+      "mae_lakh": 20.3353,
+      "Time (s)": 1.1
+    }
+  ],
+  "n_train": 6460,
+  "n_test": 1616,
+  "cities": [
+    "Bangalore",
+    "Chennai",
+    "Delhi",
+    "Hyderabad",
+    "Mumbai"
+  ],
+  "amenities": [
+    "LiftAvailable",
+    "CarParking",
+    "PowerBackup",
+    "24X7Security",
+    "MaintenanceStaff",
+    "Intercom",
+    "Gasconnection",
+    "RainWaterHarvesting",
+    "VaastuCompliant",
+    "StaffQuarter",
+    "Gymnasium",
+    "SwimmingPool",
+    "ClubHouse",
+    "JoggingTrack",
+    "LandscapedGardens",
+    "IndoorGames",
+    "SportsFacility",
+    "Children'splayarea",
+    "MultipurposeRoom",
+    "GolfCourse",
+    "School",
+    "Hospital",
+    "ATM",
+    "ShoppingMall",
+    "Cafeteria",
+    "AC",
+    "Wifi",
+    "BED",
+    "Sofa",
+    "DiningTable",
+    "Wardrobe",
+    "Refrigerator",
+    "Microwave",
+    "TV",
+    "WashingMachine"
+  ],
+  "area_range": [
+    275.0,
+    9900.0
+  ],
+  "bhk_range": [
+    1,
+    6
+  ],
+  "test_metrics": {
+    "mape": 0.11535357002800004,
+    "median_ape": 0.06525833019638,
+    "within_10": 0.630569306930693,
+    "within_20": 0.8378712871287128,
+    "rmse_log": 0.18978787148246154,
+    "r2_log": 0.9291413225949711,
+    "r2_inr": 0.8693160905814158,
+    "mae_lakh": 14.035841967819778,
+    "interval_coverage": 0.8149752475247525
+  },
+  "test_metrics_by_city": {
+    "Bangalore": {
+      "mape": 0.056374543938833906,
+      "median_ape": 0.0365692123914466,
+      "within_10": 0.8173374613003096,
+      "within_20": 0.9628482972136223,
+      "rmse_log": 0.08314725830610308,
+      "r2_log": 0.9809166998691755,
+      "r2_inr": 0.9784070274015462,
+      "mae_lakh": 5.92984498735721,
+      "n": 323
+    },
+    "Chennai": {
+      "mape": 0.07858253117313324,
+      "median_ape": 0.0499555295632583,
+      "within_10": 0.7231638418079096,
+      "within_20": 0.9096045197740112,
+      "rmse_log": 0.12444251336002712,
+      "r2_log": 0.9599175199445812,
+      "r2_inr": 0.9264276532843752,
+      "mae_lakh": 7.912863146274597,
+      "n": 354
+    },
+    "Delhi": {
+      "mape": 0.12273696917761313,
+      "median_ape": 0.08216537977808619,
+      "within_10": 0.5736196319018405,
+      "within_20": 0.8282208588957055,
+      "rmse_log": 0.1846571540265652,
+      "r2_log": 0.9464263697152808,
+      "r2_inr": 0.8283837146104815,
+      "mae_lakh": 14.942187302692902,
+      "n": 326
+    },
+    "Hyderabad": {
+      "mape": 0.14031495623216966,
+      "median_ape": 0.07234218131592668,
+      "within_10": 0.5718015665796344,
+      "within_20": 0.793733681462141,
+      "rmse_log": 0.2126670076367556,
+      "r2_log": 0.8860456271801196,
+      "r2_inr": 0.8509283160833403,
+      "mae_lakh": 14.521416167837666,
+      "n": 383
+    },
+    "Mumbai": {
+      "mape": 0.20274476195170732,
+      "median_ape": 0.12977949022174567,
+      "within_10": 0.4043478260869565,
+      "within_20": 0.6391304347826087,
+      "rmse_log": 0.30965803962889094,
+      "r2_log": 0.8625527561586189,
+      "r2_inr": 0.7984652350434303,
+      "mae_lakh": 32.750311662345496,
+      "n": 230
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "Area (sq ft)",
+      "importance": 0.8828061160284724,
+      "std": 0.019222591709627715,
+      "kind": "group"
+    },
+    {
+      "feature": "Location (city + locality)",
+      "importance": 0.6112627496784675,
+      "std": 0.01159200559637901,
+      "kind": "group"
+    },
+    {
+      "feature": "Locality within city",
+      "importance": 0.28663385835640437,
+      "std": 0.012183894014758282,
+      "kind": "group"
+    },
+    {
+      "feature": "All amenities",
+      "importance": 0.04016841325349161,
+      "std": 0.001628478197387955,
+      "kind": "group"
+    },
+    {
+      "feature": "BHK",
+      "importance": 0.018450089891991463,
+      "std": 0.0008414126161760928,
+      "kind": "group"
+    },
+    {
+      "feature": "New vs resale",
+      "importance": 0.009095678839113686,
+      "std": 0.0013895365862130508,
+      "kind": "group"
+    },
+    {
+      "feature": "Clubhouse",
+      "importance": 0.003908416398058612,
+      "std": 0.0005591495679073163,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Vaastu compliant",
+      "importance": 0.0034698942723571102,
+      "std": 0.0002853124556454596,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Piped gas",
+      "importance": 0.003292237060057568,
+      "std": 0.0003058332739837854,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Car parking",
+      "importance": 0.0027431660958583404,
+      "std": 0.00017116089690544627,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Sports facility",
+      "importance": 0.002103088236237949,
+      "std": 0.00017182428167054247,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Swimming pool",
+      "importance": 0.001954299396810577,
+      "std": 0.0004177317047775507,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Indoor games",
+      "importance": 0.0019405547972435322,
+      "std": 0.0002948448019147166,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Staff quarter",
+      "importance": 0.0016499522281106626,
+      "std": 0.00014411522047471756,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Intercom",
+      "importance": 0.0016417638281868152,
+      "std": 0.0004689676946784987,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Cafeteria",
+      "importance": 0.00158631844373871,
+      "std": 0.00025319782126505405,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Gymnasium",
+      "importance": 0.0015666413324783245,
+      "std": 0.00030399644967635166,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Multipurpose room",
+      "importance": 0.0014346967721113658,
+      "std": 0.00015296240420608525,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Landscaped gardens",
+      "importance": 0.0014231192609563514,
+      "std": 0.00022496595223576462,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Jogging track",
+      "importance": 0.0011882722524265477,
+      "std": 5.829957357850588e-05,
+      "kind": "amenity"
+    },
+    {
+      "feature": "ATM",
+      "importance": 0.001094131783317609,
+      "std": 0.00016555388352340716,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Shopping mall",
+      "importance": 0.001086270978404924,
+      "std": 0.00013043792293435477,
+      "kind": "amenity"
+    },
+    {
+      "feature": "24x7 security",
+      "importance": 0.0010832839455982457,
+      "std": 0.00018796339147210699,
+      "kind": "amenity"
+    },
+    {
+      "feature": "School",
+      "importance": 0.0010580292522676116,
+      "std": 0.00011149697691031466,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Maintenance staff",
+      "importance": 0.001035477549694397,
+      "std": 0.0003693364718876849,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Lift",
+      "importance": 0.0009850901243686262,
+      "std": 0.00044278251430328823,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Rainwater harvesting",
+      "importance": 0.0009385884600142003,
+      "std": 0.0005874405706920713,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Washing machine",
+      "importance": 0.0008339012975347781,
+      "std": 0.0008587083733955659,
+      "kind": "amenity"
+    },
+    {
+      "feature": "AC",
+      "importance": 0.0007302052632113476,
+      "std": 0.00025550811105392815,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Children's play area",
+      "importance": 0.0007254756087815339,
+      "std": 0.0004838172645326785,
+      "kind": "amenity"
+    },
+    {
+      "feature": "TV",
+      "importance": 0.0005582846533422669,
+      "std": 0.00016751104062102685,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Hospital",
+      "importance": 0.00046599815103069985,
+      "std": 7.573058539783716e-05,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Golf course",
+      "importance": 0.00040510687085599796,
+      "std": 5.948411773049884e-05,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Dining table",
+      "importance": 0.0003456526778177871,
+      "std": 5.076112183682326e-05,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Refrigerator",
+      "importance": 0.00016956833315511232,
+      "std": 0.0006837029259068614,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Beds",
+      "importance": 0.00010711219727173038,
+      "std": 0.0002630662811151476,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Power backup",
+      "importance": 4.5009106217075434e-05,
+      "std": 0.0008013744310502263,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Wardrobe",
+      "importance": 4.2682253316650434e-05,
+      "std": 2.8698231995850426e-05,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Microwave",
+      "importance": 3.991775346261495e-05,
+      "std": 0.00019510641923983977,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Sofa",
+      "importance": -4.2625576811117226e-06,
+      "std": 0.0001421181749693767,
+      "kind": "amenity"
+    },
+    {
+      "feature": "Wi-Fi",
+      "importance": -8.310461729510443e-05,
+      "std": 4.250262758479586e-05,
+      "kind": "amenity"
+    }
+  ]
+}
