@@ -1,0 +1,12 @@
+{
+  "name": "homevalue-india",
+  "private": true,
+  "description": "Frontend tooling: builds the Tailwind CSS used by the web app.",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i frontend/tailwind.src.css -o frontend/tailwind.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i frontend/tailwind.src.css -o frontend/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

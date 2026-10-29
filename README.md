@@ -41,6 +41,8 @@ The full methodology, tables and caveats are in [`reports/RESULTS.md`](reports/R
 - **EMI calculator:** down payment, interest rate and tenure, giving the monthly EMI and total interest.
 - **Accuracy dashboard:** test metrics, model comparison, error by city and feature importance.
 - **Insights and method pages:** EDA charts, the data-cleaning audit, modelling choices and limitations.
+- **Decision tools:** check an asking price against the fair range, see how changes to area, BHK, property type or amenities move the price (apply any scenario with one click), save properties to a comparison ranked by value, and fill the form from a listing photo (in-browser OCR) or pasted text.
+- **Motion:** scroll-reveal sections, a count-up on the price, animated range bars, a shimmer while estimating, staggered lists and a toast for saves. Motion is turned off for users who prefer reduced motion.
 - **Light and dark themes;** works on phones.
 - **REST API** with auto-generated docs at `/docs`.
 
@@ -103,9 +105,19 @@ curl -X POST http://127.0.0.1:8000/api/predict \
 └── reports/                RESULTS.md, figures/, comparison tables, cleaning audit
 ```
 
+## Front-end styles
+
+The page uses hand-written CSS (`frontend/styles.css`) plus Tailwind CSS utilities. Tailwind is pinned to 3.4.17 and built locally, so the page never loads an unpinned script from a CDN:
+
+```bash
+npm install            # once
+npm run build:css      # regenerate frontend/tailwind.css after changing classes
+npm run watch:css      # or rebuild automatically while you work
+```
+
 ## Testing
 
-`pytest` runs 14 tests covering the cleaning rules, model sanity checks and API input validation. All pass.
+`pytest` runs 34 tests covering the cleaning rules, model sanity checks, the decision tools (valuation, what-if, comparison, listing parsing) and API validation. All pass.
 
 ## Limitations
 

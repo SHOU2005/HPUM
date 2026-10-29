@@ -7,8 +7,10 @@
   <meta name="description" content="Machine-learning price estimates for apartments in Mumbai, Delhi, Bengaluru, Chennai and Hyderabad.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231f6f5c'/><path d='M7 16 16 8l9 8v9h-6v-6h-6v6H7z' fill='white'/></svg>">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/tailwind.css">
 </head>
 <body>
+  <div id="scrollProgress" class="fixed inset-x-0 top-0 z-50 h-[3px] origin-left bg-brand" style="transform:scaleX(0)" aria-hidden="true"></div>
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="#estimate" aria-label="HomeValue India home">
@@ -17,6 +19,7 @@
       </a>
       <nav class="nav" aria-label="Sections">
         <a href="#estimate">Estimate</a>
+        <a href="#tools">Tools</a>
         <a href="#performance">Accuracy</a>
         <a href="#insights">Insights</a>
         <a href="#method">Method</a>
@@ -29,12 +32,14 @@
   </header>
 
   <main>
-    <section class="hero wrap" aria-labelledby="heroTitle">
-      <p class="eyebrow">ML capstone · Indian residential market</p>
-      <h1 id="heroTitle">What is that flat really worth?</h1>
-      <p class="lede">Instant price estimates for apartments in <b>Mumbai, Delhi NCR, Bengaluru, Chennai and Hyderabad</b>,
+    <section class="hero wrap relative isolate overflow-hidden" aria-labelledby="heroTitle">
+      <div class="pointer-events-none absolute -right-24 -top-24 -z-10 h-72 w-72 rounded-full bg-brand-soft opacity-70 blur-3xl animate-float" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -left-16 bottom-0 -z-10 h-56 w-56 rounded-full bg-warn-soft opacity-60 blur-3xl animate-float [animation-delay:1.5s]" aria-hidden="true"></div>
+      <p class="eyebrow animate-fade-up">ML capstone · Indian residential market</p>
+      <h1 id="heroTitle" class="animate-fade-up [animation-delay:90ms]">What is that flat really worth?</h1>
+      <p class="lede animate-fade-up [animation-delay:180ms]">Instant price estimates for apartments in <b>Mumbai, Delhi NCR, Bengaluru, Chennai and Hyderabad</b>,
         learned from <span data-bind="nListings">8,000+</span> verified listings across <span data-bind="nLocalities">800+</span> localities.</p>
-      <ul class="hero-stats" aria-label="Model accuracy at a glance">
+      <ul class="hero-stats animate-fade-up [animation-delay:270ms]" aria-label="Model accuracy at a glance">
         <li><b data-bind="heroMedian">–</b><span>typical error</span></li>
         <li><b data-bind="heroWithin20">–</b><span>within ±20%</span></li>
         <li><b data-bind="heroR2">–</b><span>R² (log price)</span></li>
@@ -136,6 +141,73 @@
       </aside>
     </section>
 
+    <section id="tools" class="wrap section" aria-labelledby="toolsTitle">
+      <div class="section-head">
+        <h2 id="toolsTitle">Decision tools</h2>
+        <p class="muted">Check a real listing, explore what changes the price, read a listing from a photo, and compare shortlisted flats.</p>
+      </div>
+
+      <div class="tools-grid">
+        <div class="card tool-card" id="dealCard">
+          <h3>Is the asking price fair?</h3>
+          <p class="muted">Enter the seller's asking price to compare it with the model's fair range for the current property.</p>
+          <form id="dealForm" class="inline-form" novalidate>
+            <label for="askingLakh">Asking price <span class="muted">(₹ lakh)</span></label>
+            <div class="inline-row">
+              <input id="askingLakh" type="number" min="1" max="10000" step="0.5" inputmode="decimal" placeholder="e.g. 125" required>
+              <button class="primary-btn small transition duration-200 hover:-translate-y-0.5" type="submit">Check deal</button>
+            </div>
+          </form>
+          <p class="hint" id="dealHint">Estimate a property first, then check its asking price here.</p>
+          <div id="dealResult" hidden>
+            <span class="verdict" id="dealVerdict"></span>
+            <p class="deal-gap" id="dealGap"></p>
+            <div class="range-viz" aria-hidden="true">
+              <div class="range-track"><div class="range-band"></div><div class="range-dot fair"></div><div class="range-dot ask animate-ring-pulse"></div></div>
+              <div class="range-labels"><span id="dealLow"></span><span id="dealFair"></span><span id="dealHigh"></span></div>
+            </div>
+            <p class="hint" id="dealNote"></p>
+          </div>
+        </div>
+
+        <div class="card tool-card" id="whatIfCard">
+          <h3>What changes the price?</h3>
+          <p class="muted">Each row shows the model's estimate if one thing changes. Apply a row to try it on the form.</p>
+          <ul class="whatif" id="whatIfList" aria-live="polite">
+            <li class="muted">Run an estimate to see scenarios.</li>
+          </ul>
+        </div>
+
+        <div class="card tool-card" id="importCard">
+          <h3>Read a listing from a photo</h3>
+          <p class="muted">Photograph a brochure or listing, or paste its text. We read the area, bedrooms, price, type and locality and fill in the form. Check the values before you rely on them.</p>
+          <label class="file-btn">
+            <input id="listingPhoto" type="file" accept="image/*" capture="environment">
+            <span>📷 Take or choose a photo</span>
+          </label>
+          <p class="hint" id="ocrStatus" aria-live="polite"></p>
+          <label for="listingText" class="sr-label">Listing text</label>
+          <textarea id="listingText" rows="5" placeholder="Or paste listing text, e.g. 2 BHK resale flat in Thane West, 1,050 sq ft, asking ₹1.25 Cr"></textarea>
+          <button class="primary-btn small" id="parseBtn" type="button">Fill the form from this text</button>
+          <div class="chips" id="parsedChips" aria-live="polite"></div>
+        </div>
+
+        <div class="card tool-card wide" id="compareCard">
+          <div class="compare-head">
+            <div>
+              <h3>Compare shortlist</h3>
+              <p class="muted">Save properties to rank them by value for money. Saved on this device only.</p>
+            </div>
+            <div class="compare-actions">
+              <button class="chip-btn" id="saveCompare" type="button">+ Save current property</button>
+              <button class="chip-btn" id="clearCompare" type="button">Clear</button>
+            </div>
+          </div>
+          <div id="compareBody" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="performance" class="wrap section" aria-labelledby="perfTitle">
       <div class="section-head">
         <h2 id="perfTitle">How accurate is it?</h2>
@@ -225,6 +297,9 @@
     <img id="lightboxImg" alt="">
     <p id="lightboxCaption"></p>
   </dialog>
+
+  <div id="toast" role="status" aria-live="polite"
+       class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 translate-y-3 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-surface opacity-0 shadow-lg transition duration-300"></div>
 
   <script src="/static/app.js"></script>
 </body>

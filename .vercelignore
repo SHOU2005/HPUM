@@ -8,3 +8,4 @@ data
 reports/*.csv
 reports/*.json
 models/test_split.csv
+node_modules

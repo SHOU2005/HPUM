@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from src.config import (AMENITIES, AMENITY_GROUPS, AUDIT_PATH, CITIES, FIGURES_DIR, MAX_BHK,
                         MODEL_PATH, ROOT)
+from src.insights import compare, parse_listing, valuate, what_if
 from src.predict import load_artifacts, predict
 
 FRONTEND_DIR = ROOT / "frontend"
@@ -88,6 +89,49 @@ def model_info():
 def predict_price(p: PropertyInput):
     require_model()
     return predict(p.city, p.locality, p.area_sqft, p.bhk, p.resale, p.amenities)
+
+
+class ValuateInput(BaseModel):
+    property: PropertyInput
+    asking_price: float = Field(..., ge=100_000, le=1_000_000_000, description="Asking price in ₹")
+
+
+class ListingText(BaseModel):
+    text: str = Field(..., min_length=3, max_length=4000)
+
+
+class CompareInput(BaseModel):
+    properties: List[PropertyInput] = Field(..., min_length=2, max_length=6)
+
+
+@app.post("/api/valuate")
+def valuate_price(body: ValuateInput):
+    """Judge an asking price against the model's fair range for the same property."""
+    require_model()
+    p = body.property
+    estimate = predict(p.city, p.locality, p.area_sqft, p.bhk, p.resale, p.amenities)
+    return {"estimate": estimate, **valuate(estimate, body.asking_price)}
+
+
+@app.post("/api/what-if")
+def what_if_scenarios(p: PropertyInput):
+    """Price impact of changing area, BHK, property type or adding an influential amenity."""
+    require_model()
+    return what_if(p.city, p.locality, p.area_sqft, p.bhk, p.resale, p.amenities)
+
+
+@app.post("/api/compare")
+def compare_properties(body: CompareInput):
+    """Estimate several properties and rank them by price per sq ft (best value first)."""
+    require_model()
+    return compare([p.model_dump() for p in body.properties])
+
+
+@app.post("/api/parse-listing")
+def parse_listing_text(body: ListingText):
+    """Extract area, BHK, asking price, type and locality from pasted or OCR-read listing text."""
+    require_model()
+    return parse_listing(body.text)
 
 
 app.mount("/figures", StaticFiles(directory=FIGURES_DIR), name="figures")

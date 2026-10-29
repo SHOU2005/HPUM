@@ -30,6 +30,7 @@ const FIGURES = [
 
 let options = null;
 let hasEstimated = false;
+let currentEstimate = null; // { payload, result } of the last successful estimate
 let debounceTimer = null;
 let requestSeq = 0;
 
@@ -180,7 +181,9 @@ async function estimate() {
       throw new Error(detail || `Request failed (${res.status})`);
     }
     hasEstimated = true;
+    currentEstimate = { payload, result: data };
     renderResult(data);
+    refreshWhatIf(payload);
   } catch (err) {
     if (seq === requestSeq) showError(err.message || "Could not reach the prediction server.");
   } finally {
@@ -200,7 +203,8 @@ let lastPrice = 0;
 function renderResult(r) {
   $("#resultEmpty").hidden = true;
   $("#resultBody").hidden = false;
-  $("#resPrice").textContent = inrShort(r.price);
+  countUp($("#resPrice"), shownPrice, r.price, inrShort);
+  shownPrice = r.price;
   $("#resFull").textContent = inrFull.format(r.price);
   $("#resPpsf").textContent = `₹${intIN.format(r.price_per_sqft)} per sq ft`;
 
@@ -330,8 +334,8 @@ function renderModelInfo(info) {
     ["R² (log price)", t.r2_log.toFixed(3), `R² in ₹: ${t.r2_inr.toFixed(3)}`],
     ["80% range hit-rate", pct(t.interval_coverage, 0), "calibrated price range"],
   ];
-  $("#tiles").innerHTML = tiles.map(([k, v, s]) =>
-    `<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  $("#tiles").innerHTML = tiles.map(([k, v, s], i) =>
+    `<div class="card tile animate-fade-up" style="animation-delay:${i * 90}ms"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
 
   const models = [...info.comparison].sort((a, b) => a.median_ape - b.median_ape);
   barChart($("#chartModels"), models.map((m) => ({
@@ -376,6 +380,325 @@ function renderGallery() {
   $("#lightbox").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 }
 
+/* ---------- Motion ---------- */
+const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)");
+let shownPrice = 0;
+let toastTimer = null;
+
+/** Replay a CSS animation class on an element (remove, reflow, re-add). */
+function restartAnimation(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+
+/** Tween a number from one value to another, formatting each frame. */
+function countUp(el, from, to, format, ms = 700) {
+  if (REDUCED_MOTION.matches || from === to) { el.textContent = format(to); return; }
+  const start = performance.now();
+  const frame = (now) => {
+    const t = Math.min((now - start) / ms, 1);
+    el.textContent = format(from + (to - from) * (1 - (1 - t) ** 3));
+    if (t < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+/** Short message that slides up from the bottom of the screen. */
+function toast(message) {
+  const el = $("#toast");
+  el.textContent = message;
+  el.classList.remove("opacity-0", "translate-y-3");
+  el.classList.add("opacity-100", "translate-y-0");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove("opacity-100", "translate-y-0");
+    el.classList.add("opacity-0", "translate-y-3");
+  }, 2400);
+}
+
+/** Fade sections and cards in as they scroll into view. */
+function setupReveal() {
+  if (REDUCED_MOTION.matches || !("IntersectionObserver" in window)) return;
+  const targets = document.querySelectorAll(".section, .tool-card, .chart-card");
+  targets.forEach((el) => el.classList.add("reveal"));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-in");
+      io.unobserve(entry.target);
+    });
+  }, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
+  targets.forEach((el) => io.observe(el));
+}
+
+/** Thin bar at the top of the page showing how far the visitor has scrolled. */
+function setupScrollProgress() {
+  const bar = $("#scrollProgress");
+  const root = document.documentElement;
+  const update = () => {
+    const max = root.scrollHeight - root.clientHeight;
+    bar.style.transform = `scaleX(${max > 0 ? root.scrollTop / max : 0})`;
+  };
+  addEventListener("scroll", update, { passive: true });
+  update();
+}
+
+/* ---------- Decision tools ---------- */
+const COMPARE_KEY = "hv-compare";
+const MAX_COMPARE = 6;
+const postJson = (url, body) => fetch(url, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
+const apiError = (data, fallback) => (Array.isArray(data.detail)
+  ? data.detail.map((d) => d.msg.replace(/^Value error, /, "")).join(" ")
+  : data.detail) || fallback;
+
+/** Put a set of property fields on the form (any missing key is left as it is), then re-estimate. */
+function setFormValues(p) {
+  if (p.city) {
+    const radio = document.querySelector(`input[name="city"][value="${p.city}"]`);
+    if (radio) { radio.checked = true; fillLocalities(p.city); }
+  }
+  if (p.locality) $("#locality").value = p.locality;
+  if (p.area_sqft) { $("#area").value = p.area_sqft; $("#areaRange").value = p.area_sqft; }
+  if (p.bhk) {
+    const radio = document.querySelector(`input[name="bhk"][value="${p.bhk}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (typeof p.resale === "boolean") {
+    document.querySelector(`input[name="resale"][value="${p.resale ? 1 : 0}"]`).checked = true;
+  }
+  if (Array.isArray(p.amenities)) {
+    const keep = new Set(p.amenities);
+    document.querySelectorAll('input[name="amenity"]').forEach((cb) => { cb.checked = keep.has(cb.value); });
+    updateAmenityCounts();
+  }
+  updateLocalityHint();
+  estimate();
+}
+
+/* Deal check: asking price vs the model's fair range */
+async function checkDeal(e) {
+  e.preventDefault();
+  const lakh = Number($("#askingLakh").value);
+  const hint = $("#dealHint");
+  if (!currentEstimate) { hint.textContent = "Estimate a property first, then check its asking price."; return; }
+  if (!(lakh > 0)) { hint.textContent = "Enter the asking price in lakh, for example 125 for ₹1.25 crore."; return; }
+  try {
+    const res = await postJson("/api/valuate", { property: currentEstimate.payload, asking_price: lakh * 1e5 });
+    const data = await res.json();
+    if (!res.ok) throw new Error(apiError(data, "Could not check this price."));
+    renderDeal(data);
+  } catch (err) {
+    hint.textContent = err.message;
+  }
+}
+
+function renderDeal(d) {
+  const box = $("#dealResult");
+  $("#dealHint").textContent = "";
+  box.hidden = false;
+  const verdict = $("#dealVerdict");
+  verdict.textContent = d.verdict;
+  verdict.className = `verdict ${d.tone}`;
+  restartAnimation(verdict, "animate-pop-in");
+  const sign = d.gap_pct > 0 ? "+" : "";
+  $("#dealGap").textContent = `Asking ${inrShort(d.asking_price)} is ${sign}${d.gap_pct}% against a fair value of ${inrShort(d.fair_price)}.`;
+
+  const lo = Math.min(d.low, d.asking_price) * 0.9;
+  const hi = Math.max(d.high, d.asking_price) * 1.1;
+  const span = hi - lo;
+  const pos = (v) => `${((v - lo) / span) * 100}%`;
+  const band = box.querySelector(".range-band");
+  band.style.left = pos(d.low);
+  band.style.right = `${100 - ((d.high - lo) / span) * 100}%`;
+  box.querySelector(".range-dot.fair").style.left = pos(d.fair_price);
+  box.querySelector(".range-dot.ask").style.left = pos(d.asking_price);
+  $("#dealLow").textContent = inrShort(d.low);
+  $("#dealFair").textContent = `fair ${inrShort(d.fair_price)}`;
+  $("#dealHigh").textContent = inrShort(d.high);
+  $("#dealNote").textContent = d.note;
+}
+
+/* What-if: how the price moves with each change */
+async function refreshWhatIf(payload) {
+  const list = $("#whatIfList");
+  try {
+    const res = await postJson("/api/what-if", payload);
+    const data = await res.json();
+    if (!res.ok) throw new Error(apiError(data, "Scenarios are unavailable."));
+    const rows = [...data.scenarios].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 10);
+    if (!rows.length) { list.innerHTML = '<li class="muted">No scenarios to show for these inputs.</li>'; return; }
+    list.innerHTML = rows.map((s, i) => `
+      <li class="whatif-row animate-slide-in" style="animation-delay:${i * 45}ms">
+        <span class="whatif-label">${escapeHtml(s.label)}</span>
+        <span class="whatif-delta ${s.delta >= 0 ? "up" : "down"}">${s.delta >= 0 ? "+" : "−"}${inrShort(Math.abs(s.delta))} (${s.delta_pct >= 0 ? "+" : ""}${s.delta_pct}%)</span>
+        <button type="button" class="chip-btn small" data-scenario="${i}">Apply</button>
+      </li>`).join("");
+    list.querySelectorAll("[data-scenario]").forEach((btn) => btn.addEventListener("click", () => {
+      setFormValues(rows[Number(btn.dataset.scenario)].change);
+    }));
+  } catch (err) {
+    list.innerHTML = `<li class="muted">${escapeHtml(err.message)}</li>`;
+  }
+}
+
+/* Listing import: OCR a photo in the browser, then parse the text on the server */
+let tesseractPromise = null;
+
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (!tesseractPromise) {
+    tesseractPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+      s.onload = () => resolve(window.Tesseract);
+      s.onerror = () => {
+        tesseractPromise = null;
+        reject(new Error("Could not load the text reader. Check your connection, or paste the text instead."));
+      };
+      document.head.append(s);
+    });
+  }
+  return tesseractPromise;
+}
+
+async function readPhoto(file) {
+  const status = $("#ocrStatus");
+  status.textContent = "Loading the text reader…";
+  try {
+    const T = await loadTesseract();
+    status.textContent = "Reading text from the photo…";
+    const { data } = await T.recognize(file, "eng", {
+      logger: (m) => {
+        if (m.status === "recognizing text") status.textContent = `Reading text… ${Math.round(m.progress * 100)}%`;
+      },
+    });
+    const text = (data.text || "").trim();
+    $("#listingText").value = text;
+    if (!text) { status.textContent = "No text found. Try a clearer, well-lit photo, or paste the text."; return; }
+    status.textContent = "Text read. Checking it for property details…";
+    await parseListing();
+  } catch (err) {
+    status.textContent = err.message || "Could not read the photo.";
+  }
+}
+
+const PARSED_LABELS = {
+  city: ["City", (v) => cityLabel(v)],
+  locality: ["Locality", (v) => v],
+  area_sqft: ["Area", (v) => `${intIN.format(v)} sq ft`],
+  bhk: ["Bedrooms", (v) => `${v} BHK`],
+  asking_price: ["Asking price", (v) => inrShort(v)],
+  resale: ["Type", (v) => (v ? "Resale" : "New")],
+};
+
+async function parseListing() {
+  const text = $("#listingText").value.trim();
+  const status = $("#ocrStatus");
+  if (text.length < 3) { status.textContent = "Paste or photograph a listing first."; return; }
+  try {
+    const res = await postJson("/api/parse-listing", { text });
+    const data = await res.json();
+    if (!res.ok) throw new Error(apiError(data, "Could not read this text."));
+
+    $("#parsedChips").innerHTML = data.found.length
+      ? data.found.map((k) => `<span class="chip">${PARSED_LABELS[k][0]}: ${escapeHtml(PARSED_LABELS[k][1](data[k]))}</span>`).join("")
+      : '<span class="muted">No property details found. Include the area, BHK, price and locality.</span>';
+
+    const fields = {};
+    ["city", "locality", "area_sqft", "bhk", "resale"].forEach((k) => { if (data[k] != null) fields[k] = data[k]; });
+    if (data.asking_price) $("#askingLakh").value = +(data.asking_price / 1e5).toFixed(2);
+    if (data.found.length) {
+      status.textContent = "Filled the form from the listing. Check the values before you rely on them.";
+      setFormValues(fields);
+    } else {
+      status.textContent = "";
+    }
+  } catch (err) {
+    status.textContent = err.message;
+  }
+}
+
+/* Compare shortlist, saved in this browser only */
+let compareNote = "";
+
+function loadCompare() {
+  try { return JSON.parse(localStorage.getItem(COMPARE_KEY) || "[]"); } catch (_) { return []; }
+}
+
+function saveCompare(list) {
+  try { localStorage.setItem(COMPARE_KEY, JSON.stringify(list)); } catch (_) { /* storage unavailable */ }
+}
+
+function saveCurrent() {
+  const list = loadCompare();
+  if (!currentEstimate) toast("Estimate a property first, then save it");
+  else if (list.length >= MAX_COMPARE) toast(`You can compare up to ${MAX_COMPARE} properties. Remove one first`);
+  else {
+    const { city, locality, area_sqft, bhk, resale, amenities } = currentEstimate.payload;
+    list.push({ city, locality, area_sqft, bhk, resale, amenities });
+    saveCompare(list);
+    toast(`Saved ${locality} · ${list.length} to compare`);
+  }
+  renderCompare();
+}
+
+async function renderCompare() {
+  const list = loadCompare();
+  const body = $("#compareBody");
+  const note = compareNote ? `<p class="hint">${escapeHtml(compareNote)}</p>` : "";
+  compareNote = "";
+  if (!list.length) {
+    body.innerHTML = `${note}<p class="muted">No properties saved yet.</p>`;
+    return;
+  }
+  if (list.length < 2) {
+    body.innerHTML = `${note}<p class="hint">Save one more property to compare them.</p>
+      <ul class="compare-list">${list.map((p, i) => `<li>${escapeHtml(p.locality)} · ${p.bhk} BHK · ${intIN.format(p.area_sqft)} sq ft
+        <button type="button" class="link-btn" data-remove="${i}">Remove</button></li>`).join("")}</ul>`;
+    return;
+  }
+  try {
+    const res = await postJson("/api/compare", { properties: list });
+    const rows = await res.json();
+    if (!res.ok) throw new Error(apiError(rows, "Could not compare these properties."));
+    body.innerHTML = `${note}<div class="table-scroll"><table class="compare-table">
+      <thead><tr><th>Rank</th><th>Property</th><th class="num">Estimate</th><th class="num">₹ / sq ft</th>
+        <th class="num">80% range</th><th></th></tr></thead>
+      <tbody>${rows.map((r, i) => `<tr class="animate-fade-in ${r.rank === 1 ? "best" : ""}" style="animation-delay:${i * 70}ms">
+        <td>${r.rank === 1 ? "🏆 " : ""}${r.rank}</td>
+        <td><b>${escapeHtml(r.locality)}</b><br><span class="muted">${escapeHtml(cityLabel(r.city))} · ${r.bhk} BHK · ${r.area_sqft ? intIN.format(r.area_sqft) : ""} sq ft · ${r.resale ? "resale" : "new"}</span></td>
+        <td class="num">${inrShort(r.estimate.price)}</td>
+        <td class="num">₹${intIN.format(r.estimate.price_per_sqft)}</td>
+        <td class="num">${inrShort(r.estimate.low)} – ${inrShort(r.estimate.high)}</td>
+        <td><button type="button" class="link-btn" data-remove="${r.index}">Remove</button></td>
+      </tr>`).join("")}</tbody></table></div>
+      <p class="hint">Ranked by estimated price per sq ft, lowest first. A lower rate usually means more area for the money, but check the locality and amenities too.</p>`;
+  } catch (err) {
+    body.innerHTML = `${note}<p class="hint warn">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function wireTools() {
+  $("#dealForm").addEventListener("submit", checkDeal);
+  $("#listingPhoto").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) readPhoto(f); });
+  $("#parseBtn").addEventListener("click", parseListing);
+  $("#saveCompare").addEventListener("click", saveCurrent);
+  $("#clearCompare").addEventListener("click", () => { saveCompare([]); toast("Comparison cleared"); renderCompare(); });
+  $("#compareBody").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    const list = loadCompare();
+    list.splice(Number(btn.dataset.remove), 1);
+    saveCompare(list);
+    toast("Removed from comparison");
+    renderCompare();
+  });
+  renderCompare();
+}
+
 /* ---------- Wiring ---------- */
 function wire() {
   const form = $("#estimateForm");
@@ -411,7 +734,10 @@ async function main() {
     options = await opt.json();
     buildForm();
     wire();
+    wireTools();
     renderModelInfo(await info.json());
+    setupScrollProgress();
+    setupReveal();
     estimate();
   } catch (err) {
     showError(err.message || "Could not reach the prediction server. Is `uvicorn api:app` running?");
