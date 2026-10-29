@@ -20,6 +20,7 @@
       <nav class="nav" aria-label="Sections">
         <a href="#estimate">Estimate</a>
         <a href="#tools">Tools</a>
+        <a href="#game">Game</a>
         <a href="#performance">Accuracy</a>
         <a href="#insights">Insights</a>
         <a href="#method">Method</a>
@@ -32,9 +33,7 @@
   </header>
 
   <main>
-    <section class="hero wrap relative isolate overflow-hidden" aria-labelledby="heroTitle">
-      <div class="pointer-events-none absolute -right-24 -top-24 -z-10 h-72 w-72 rounded-full bg-brand-soft opacity-70 blur-3xl animate-float" aria-hidden="true"></div>
-      <div class="pointer-events-none absolute -left-16 bottom-0 -z-10 h-56 w-56 rounded-full bg-warn-soft opacity-60 blur-3xl animate-float [animation-delay:1.5s]" aria-hidden="true"></div>
+    <section class="hero wrap relative isolate" aria-labelledby="heroTitle">
       <p class="eyebrow animate-fade-up">ML capstone · Indian residential market</p>
       <h1 id="heroTitle" class="animate-fade-up [animation-delay:90ms]">What is that flat really worth?</h1>
       <p class="lede animate-fade-up [animation-delay:180ms]">Instant price estimates for apartments in <b>Mumbai, Delhi NCR, Bengaluru, Chennai and Hyderabad</b>,
@@ -204,6 +203,55 @@
             </div>
           </div>
           <div id="compareBody" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="game" class="wrap section" aria-labelledby="gameTitle">
+      <div class="section-head">
+        <h2 id="gameTitle">Beat the model</h2>
+        <p class="muted">Each round is a real listing the model never saw during training. Guess its price and see how you compare with the model. A perfect guess scores 100. You score 0 if you are 50% or more off.</p>
+      </div>
+
+      <div class="game-grid">
+        <form class="card game-card" id="gameForm" novalidate>
+          <div class="game-top">
+            <span class="chip" id="gRound">Round –</span>
+            <span class="muted game-stats" id="gStats"></span>
+          </div>
+          <h3 id="gTitle" class="game-title">Loading a listing…</h3>
+          <p class="muted" id="gSub"></p>
+          <dl class="game-facts" id="gFacts"></dl>
+          <ul class="chips" id="gAmen" aria-label="Amenities"></ul>
+
+          <label for="gSlider" class="game-label">Your price guess <span class="muted">(₹ lakh)</span></label>
+          <div class="game-guess">
+            <input id="gSlider" type="range" min="20" max="500" step="1" value="100" aria-label="Guess slider">
+            <input id="gNum" type="number" min="20" max="10000" step="1" value="100" aria-label="Guess in lakh">
+          </div>
+          <p class="guess-readout" id="gReadout" aria-live="polite"></p>
+          <button class="primary-btn" id="gLock" type="submit">Lock my guess</button>
+        </form>
+
+        <div class="card game-reveal" id="gReveal" aria-live="polite">
+          <div class="game-empty" id="gEmpty">
+            <p>Lock a guess to reveal the true price and the model's estimate.</p>
+          </div>
+          <div id="gResult" hidden>
+            <div class="score-wrap">
+              <svg class="score-ring" viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+                <circle class="ring-fg" id="gRing" cx="50" cy="50" r="44"></circle>
+              </svg>
+              <div class="score-text">
+                <b id="gScore">0</b><span>/ 100</span>
+              </div>
+            </div>
+            <p class="verdict-line" id="gVerdict"></p>
+            <p class="muted" id="gBeat"></p>
+            <div class="compare-bars" id="gBars"></div>
+            <button class="primary-btn" id="gNext" type="button">Next listing →</button>
+          </div>
         </div>
       </div>
     </section>

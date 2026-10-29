@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from src.config import (AMENITIES, AMENITY_GROUPS, AUDIT_PATH, CITIES, FIGURES_DIR, MAX_BHK,
                         MODEL_PATH, ROOT)
+from src.game import new_round, score_guess
 from src.insights import compare, parse_listing, valuate, what_if
 from src.predict import load_artifacts, predict
 
@@ -125,6 +126,28 @@ def compare_properties(body: CompareInput):
     """Estimate several properties and rank them by price per sq ft (best value first)."""
     require_model()
     return compare([p.model_dump() for p in body.properties])
+
+
+class GuessInput(BaseModel):
+    round_id: int = Field(..., ge=0)
+    guess: float = Field(..., ge=100_000, le=1_000_000_000, description="Guessed price in ₹")
+
+
+@app.get("/api/game/round")
+def game_round():
+    """A random held-out listing for the price game. The true price is not included."""
+    require_model()
+    return new_round()
+
+
+@app.post("/api/game/guess")
+def game_guess(body: GuessInput):
+    """Score a guess against the true price and the model's estimate."""
+    require_model()
+    try:
+        return score_guess(body.round_id, body.guess)
+    except (IndexError, ValueError) as exc:
+        raise HTTPException(422, str(exc))
 
 
 @app.post("/api/parse-listing")

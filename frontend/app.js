@@ -699,6 +699,142 @@ function wireTools() {
   renderCompare();
 }
 
+/* ---------- Price game: beat the model ---------- */
+const GAME_KEY = "hv-game";
+const game = { round: null, locked: false, streak: 0, best: 0, played: 0 };
+
+function loadGameStats() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GAME_KEY) || "{}");
+    game.best = Number(saved.best) || 0;
+    game.played = Number(saved.played) || 0;
+    game.streak = 0; // streaks restart each visit
+  } catch (_) { /* storage unavailable */ }
+}
+
+function saveGameStats() {
+  try { localStorage.setItem(GAME_KEY, JSON.stringify({ best: game.best, played: game.played })); } catch (_) { /* ignore */ }
+}
+
+function renderGameStats() {
+  $("#gStats").textContent = `Best ${game.best} · Streak ${game.streak} · Played ${game.played}`;
+}
+
+/** Keep the slider and number box in step, and show the guess in words. */
+function setGuessLakh(v) {
+  const lakh = Math.min(10000, Math.max(20, Math.round(Number(v) || 20)));
+  $("#gSlider").value = Math.min(500, lakh);
+  $("#gNum").value = lakh;
+  $("#gReadout").textContent = `That is ${inrShort(lakh * 1e5)}`;
+}
+
+function renderListing(round) {
+  const l = round.listing;
+  $("#gRound").textContent = `Round ${game.played + 1}`;
+  $("#gTitle").textContent = `${l.bhk} BHK ${l.resale ? "resale" : "new"} flat in ${l.locality}`;
+  $("#gSub").textContent = `${cityLabel(l.city)}`;
+  $("#gFacts").innerHTML = [
+    ["Area", `${intIN.format(l.area_sqft)} sq ft`],
+    ["Bedrooms", `${l.bhk} BHK`],
+    ["Type", l.resale ? "Resale" : "New"],
+    ["Amenities", `${l.amenities.length}`],
+  ].map(([k, v]) => `<div><dt>${k}</dt><dd>${escapeHtml(v)}</dd></div>`).join("");
+  const shown = l.amenity_labels.slice(0, 8);
+  const more = l.amenity_labels.length - shown.length;
+  $("#gAmen").innerHTML = shown.map((a) => `<li class="chip">${escapeHtml(a)}</li>`).join("")
+    + (more > 0 ? `<li class="chip muted-chip">+${more} more</li>` : "")
+    + (l.amenity_labels.length === 0 ? '<li class="muted">No amenities recorded</li>' : "");
+}
+
+async function nextRound() {
+  game.locked = false;
+  $("#gLock").disabled = false;
+  $("#gResult").hidden = true;
+  $("#gEmpty").hidden = false;
+  try {
+    const res = await fetch("/api/game/round");
+    if (!res.ok) throw new Error("Could not load a listing.");
+    game.round = await res.json();
+    renderListing(game.round);
+    setGuessLakh(100);
+  } catch (err) {
+    $("#gTitle").textContent = err.message;
+  }
+}
+
+function barRow(label, value, max, tone) {
+  return `<div class="bar-line">
+    <span class="bar-name">${escapeHtml(label)}</span>
+    <span class="bar-wrap"><span class="bar-fill ${tone}" data-w="${(value / max) * 100}"></span></span>
+    <span class="bar-amt">${inrShort(value)}</span>
+  </div>`;
+}
+
+function renderReveal(r) {
+  $("#gEmpty").hidden = true;
+  $("#gResult").hidden = false;
+  const score = $("#gScore");
+  countUp(score, 0, r.score, (v) => String(Math.round(v)), 900);
+  const C = 2 * Math.PI * 44;
+  const ring = $("#gRing");
+  ring.style.strokeDasharray = C;
+  ring.style.strokeDashoffset = C;
+  requestAnimationFrame(() => { ring.style.strokeDashoffset = C * (1 - r.score / 100); });
+
+  const tone = r.score >= 70 ? "good" : r.score >= 40 ? "warn" : "bad";
+  const verdict = $("#gVerdict");
+  verdict.textContent = r.verdict;
+  verdict.className = `verdict-line ${tone}`;
+  restartAnimation(verdict, "animate-pop-in");
+  $("#gBeat").textContent = r.beat_model
+    ? `You beat the model: you were ${r.your_error_pct}% off, the model ${r.model_error_pct}% off.`
+    : `The model was closer: it was ${r.model_error_pct}% off, you ${r.your_error_pct}% off.`;
+
+  const max = Math.max(r.guess, r.model, r.actual);
+  $("#gBars").innerHTML = [
+    barRow("Your guess", r.guess, max, "you"),
+    barRow("Model", r.model, max, "model"),
+    barRow("True price", r.actual, max, "actual"),
+  ].join("");
+  requestAnimationFrame(() => document.querySelectorAll(".bar-fill").forEach((el) => {
+    el.style.width = `${el.dataset.w}%`;
+  }));
+}
+
+async function lockGuess(e) {
+  e.preventDefault();
+  if (!game.round || game.locked) return;
+  const lakh = Number($("#gNum").value);
+  if (!(lakh >= 20)) { $("#gReadout").textContent = "Enter a guess of at least ₹20 lakh."; return; }
+  game.locked = true;
+  $("#gLock").disabled = true;
+  try {
+    const res = await postJson("/api/game/guess", { round_id: game.round.round_id, guess: lakh * 1e5 });
+    const r = await res.json();
+    if (!res.ok) throw new Error(apiError(r, "Could not score this guess."));
+    game.played += 1;
+    game.streak = r.beat_model ? game.streak + 1 : 0;
+    game.best = Math.max(game.best, r.score);
+    saveGameStats();
+    renderGameStats();
+    renderReveal(r);
+  } catch (err) {
+    game.locked = false;
+    $("#gLock").disabled = false;
+    $("#gReadout").textContent = err.message;
+  }
+}
+
+function wireGame() {
+  loadGameStats();
+  renderGameStats();
+  $("#gameForm").addEventListener("submit", lockGuess);
+  $("#gSlider").addEventListener("input", (e) => setGuessLakh(e.target.value));
+  $("#gNum").addEventListener("input", (e) => setGuessLakh(e.target.value));
+  $("#gNext").addEventListener("click", nextRound);
+  nextRound();
+}
+
 /* ---------- Wiring ---------- */
 function wire() {
   const form = $("#estimateForm");
@@ -735,6 +871,7 @@ async function main() {
     buildForm();
     wire();
     wireTools();
+    wireGame();
     renderModelInfo(await info.json());
     setupScrollProgress();
     setupReveal();
