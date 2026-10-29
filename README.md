@@ -6,6 +6,8 @@ HomeValue India predicts the market price of an apartment in Mumbai, Delhi NCR, 
 
 > Capstone project, B.Tech. Data: listings scraped from Makaan.com (2021 snapshot), published on Kaggle.
 
+**Live demo:** https://homevalue-india.vercel.app (API docs at `/docs`)
+
 ---
 
 ## At a glance

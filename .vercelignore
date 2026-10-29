@@ -1,0 +1,10 @@
+venv
+.git
+.pytest_cache
+__pycache__
+*.pyc
+tests
+data
+reports/*.csv
+reports/*.json
+models/test_split.csv

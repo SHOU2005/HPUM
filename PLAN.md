@@ -23,7 +23,7 @@ Status as of 29 October 2026.
 | Locality standardisation | ⏳ Pending | Merge variants such as "Whitefield" and "Whitefield Hope Farm Junction" |
 | Property age, floor, coordinates | ⏳ Pending | Not in the source data; needs new data |
 | Explainability per prediction (SHAP) | ⏳ Pending | Only global permutation importance so far |
-| Public deployment | ⏳ Pending | Planned: Render or Railway with Docker |
+| Public deployment | ✅ Done | Live on Vercel: https://homevalue-india.vercel.app |
 
 ## 2. Problem
 
@@ -118,4 +118,4 @@ Details and numbers are in [`reports/RESULTS.md`](reports/RESULTS.md).
 - Standardise locality names, then geocode them to latitude and longitude so that distance-based features become possible.
 - Add floor, age and facing features.
 - Add SHAP explanations for each prediction.
-- Deploy with Docker on Render or Railway.
+- Move the 85 MB model out of the repository (for example to release storage) to keep clones small.
